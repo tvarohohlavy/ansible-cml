@@ -63,6 +63,7 @@ EXAMPLES = r"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.cml.plugins.module_utils.cml_utils import cmlModule, cml_argument_spec
+import yaml
 
 
 def run_module():
@@ -86,6 +87,8 @@ def run_module():
         # to handle duplicates
         lab = labs[0]
         lab.sync()
+        topology = lab.download()
+        cml_facts['topology'] = yaml.safe_load(topology)
         cml_facts['details'] = lab.details()
         cml_facts['nodes'] = {}
         for node in lab.nodes():
