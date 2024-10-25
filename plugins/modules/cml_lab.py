@@ -92,7 +92,7 @@ EXAMPLES = r"""
     - name: Create the lab
       cisco.cml.cml_lab:
         host: "{{ cml_host }}"
-        user: "{{ cml_username }}"
+        username: "{{ cml_username }}"
         password: "{{ cml_password }}"
         lab: "{{ cml_lab }}"
         state: present
