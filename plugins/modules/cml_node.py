@@ -106,7 +106,7 @@ EXAMPLES = r"""
       cisco.cml.cml_node:
         name: "{{ inventory_hostname }}"
         host: "{{ cml_host }}"
-        user: "{{ cml_username }}"
+        username: "{{ cml_username }}"
         password: "{{ cml_password }}"
         lab: "{{ cml_lab }}"
         state: started

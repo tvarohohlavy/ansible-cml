@@ -39,7 +39,7 @@ class cmlModule(object):
         self.status = None
         self.url = None
         self.params['force_basic_auth'] = True
-        self.user = self.params['user']
+        self.user = self.params['username']
         self.password = self.params['password']
         self.host = self.params['host']
         self.timeout = self.params['timeout']

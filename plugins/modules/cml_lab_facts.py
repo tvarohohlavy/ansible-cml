@@ -52,7 +52,7 @@ EXAMPLES = r"""
     - name: Get facts about a lab in CML
       cisco.cml.cml_lab_facts:
         host: "{{ cml_host }}"
-        user: "{{ cml_username }}"
+        username: "{{ cml_username }}"
         password: "{{ cml_password }}"
         lab: "{{ cml_lab }}"
       register: results
