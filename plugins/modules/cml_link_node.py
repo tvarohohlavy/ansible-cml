@@ -146,6 +146,8 @@ def run_module():
         required_if=required_if,
     )
     cml = cmlModule(module)
+    cml.result['changed'] = False
+    cml.result['state'] = cml.params['state']
 
     labs = cml.client.find_labs_by_title(cml.params['lab'])
     if len(labs) > 0:
