@@ -38,6 +38,7 @@ description:
   - Note: when updating, all three nodes must be specified
 author:
   - Paul Pajerski (@ppajersk)
+  - Jakub Travnik (@tvarohohlavy)
 requirements:
   - virl2_client
 version_added: '0.1.0'
