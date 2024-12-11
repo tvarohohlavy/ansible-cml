@@ -159,7 +159,7 @@ def run_module():
     argument_spec = cml_argument_spec()
     argument_spec.update(
         lab=dict(type='str', required=True, fallback=(env_fallback, ['CML_LAB'])),
-        state=dict(type='str', required=True, choices=['present', 'updated', 'absent'], default='present'),
+        state=dict(type='str', required=False, choices=['present', 'updated', 'absent'], default='present'),
         source_node=dict(type='str', required=True),
         source_interface=dict(type='str', required=False),
         source_interface_slot=dict(type='int', required=False),
