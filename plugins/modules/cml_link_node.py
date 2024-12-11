@@ -159,8 +159,8 @@ def run_module():
         cml.fail_json("One or more nodes cannot be found. Nodes need to be created before a link can be established")
         cml.exit_json(**cml.result)
         return
-    
-    link = cml.get_link_by_nodes(lab, source_node, destination_node)
+
+    link = source_node.get_link_to(destination_node)
 
     if cml.params['action'] == 'create':
         if link == None: # if the link does not exist
