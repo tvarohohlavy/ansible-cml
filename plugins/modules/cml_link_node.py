@@ -42,12 +42,12 @@ requirements:
   - virl2_client
 version_added: '0.1.0'
 options:
-    action:
-        description: The desired action to take with the link
+    state:
+        description: The desired state of the link
         required: false
         type: str
-        choices: ['create', 'update', 'delete']
-        default: create
+        choices: ['present', 'updated', 'absent']
+        default: present
 
     lab:
         description: The name of the CML lab (CML_LAB)
@@ -66,7 +66,7 @@ options:
 
     update_node:
         description: The name of the third node, this node is only used in update commands
-        where if provided alongside the update action, will update the link between source_node and destination_node
+        where if provided alongside the updated state, will update the link between source_node and destination_node
         to link between source_node and update_node
         required: false
         type: str
@@ -86,7 +86,7 @@ EXAMPLES = r"""
         lab: "{{ cml_lab }}"
         source_node: "{{ source_node }}"
         destination_node: "{{ destination_node }}"
-        action: create
+        state: present
 
 - name: Update a link between two CML nodes
   hosts: cml_hosts
@@ -102,7 +102,7 @@ EXAMPLES = r"""
         source_node: "{{ source_node }}"
         destination_node: "{{ destination_node }}"
         update_node: "{{ update_node }}"
-        action: update
+        state: updated
 
 - name: Delete a link between two CML nodes
   hosts: cml_hosts
@@ -117,7 +117,7 @@ EXAMPLES = r"""
         lab: "{{ cml_lab }}"
         source_node: "{{ source_node }}"
         destination_node: "{{ destination_node }}"
-        action: delete
+        state: absent
 """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
@@ -128,7 +128,7 @@ def run_module():
     argument_spec = cml_argument_spec()
     argument_spec.update(
         lab=dict(type='str', required=True, fallback=(env_fallback, ['CML_LAB'])),
-        action=dict(type='str', required=True),
+        state=dict(type='str', required=True, choices=['present', 'updated', 'absent'], default='present'),
         source_node=dict(type='str', required=True),
         destination_node=dict(type='str', required=True),
         update_node=dict(type='str', required=False),
@@ -162,7 +162,7 @@ def run_module():
 
     link = source_node.get_link_to(destination_node)
 
-    if cml.params['action'] == 'create':
+    if cml.params['state'] == 'present':
         if link == None: # if the link does not exist
             if module.check_mode:
                 module.exit_json(changed=True)
@@ -170,7 +170,7 @@ def run_module():
             cml.result['changed'] = True
         else:
             cml.fail_json("Link between nodes already exists") 
-    elif cml.params['action'] == 'update':
+    elif cml.params['state'] == 'updated':
         if link is not None:
             if update_node is not None: # only need to check if update_node is none here
                 if module.check_mode:
@@ -182,7 +182,7 @@ def run_module():
                cml.fail_json("update_node cannot be found or does not exist")     
         else:
             cml.fail_json("Link between nodes does not exist")      
-    elif cml.params['action'] == 'delete':
+    elif cml.params['state'] == 'absent':
         if link is not None:
             if module.check_mode:
                 module.exit_json(changed=True)
