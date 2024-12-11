@@ -181,16 +181,13 @@ def run_module():
             cml.result['changed'] = True
     elif cml.params['state'] == 'updated':
         if link is not None:
-            if update_node is not None: # only need to check if update_node is none here
-                if module.check_mode:
-                    module.exit_json(changed=True)
-                lab.remove_link(link) # remove current link
-                link = lab.connect_two_nodes(source_node, update_node) # create new link
-                cml.result['changed'] = True
-            else:
-               cml.fail_json("update_node cannot be found or does not exist")     
+            if module.check_mode:
+                cml.exit_json(changed=True)
+            lab.remove_link(link) # remove current link
+            link = lab.connect_two_nodes(source_node, update_node) # create new link
+            cml.result['changed'] = True
         else:
-            cml.fail_json("Link between nodes does not exist")      
+            cml.fail_json("Link between nodes does not exist so cannot be updated")      
     elif cml.params['state'] == 'absent':
         if link is not None:
             if module.check_mode:
