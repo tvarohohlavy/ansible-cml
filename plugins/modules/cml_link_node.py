@@ -62,36 +62,14 @@ options:
     destination_node:
         description: The name of the second node
         required: true
-        type: str    
+        type: str
 
     update_node:
         description: The name of the third node, this node is only used in update commands
         where if provided alongside the update action, will update the link between source_node and destination_node
         to link between source_node and update_node
         required: false
-        type: str    
-
-    x:
-        description: X coordinate on topology canvas
-        required: false
-        type: int
-
-    y:
-        description: Y coordinate on topology canvas
-        required: false
-        type: int
-
-    tags:
-        description: List of tags
-        required: false
-        type: list
-        elements: str
-
-    wait:
-        description: Wait for lab virtual machines to boot before continuing
-        required: false
-        type: bool
-        default: False
+        type: str
 """
 
 EXAMPLES = r"""
@@ -154,10 +132,6 @@ def run_module():
         source_node=dict(type='str', required=True),
         destination_node=dict(type='str', required=True),
         update_node=dict(type='str', required=False),
-        tags=dict(type='list', elements='str'),
-        x=dict(type='int'),
-        y=dict(type='int'),
-        wait=dict(type='bool', default=False),
     )
 
     # the AnsibleModule object will be our abstraction working with Ansible
