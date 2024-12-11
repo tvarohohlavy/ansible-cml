@@ -162,8 +162,14 @@ def run_module():
 
     if source_node == None or destination_node == None:
         cml.fail_json("One or more nodes cannot be found. Nodes need to be created before a link can be established")
-        cml.exit_json(**cml.result)
-        return
+
+    if source_node == destination_node:
+        cml.fail_json("Source and destination nodes cannot be the same")
+    
+    if cml.params['state'] == 'updated' and update_node is None:
+        cml.fail_json("State set to updated, but source_node was not found")
+    if cml.params['update_node'] and update_node is None:
+        cml.fail_json("Update_node specified, but it was not found")
 
     link = source_node.get_link_to(destination_node)
 
