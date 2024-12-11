@@ -164,6 +164,8 @@ def run_module():
 
     if cml.params['action'] == 'create':
         if link == None: # if the link does not exist
+            if module.check_mode:
+                module.exit_json(changed=True)
             link = lab.connect_two_nodes(source_node, destination_node) 
             cml.result['changed'] = True
         else:
@@ -171,6 +173,8 @@ def run_module():
     elif cml.params['action'] == 'update':
         if link is not None:
             if update_node is not None: # only need to check if update_node is none here
+                if module.check_mode:
+                    module.exit_json(changed=True)
                 lab.remove_link(link) # remove current link
                 link = lab.connect_two_nodes(source_node, update_node) # create new link
                 cml.result['changed'] = True
@@ -180,6 +184,8 @@ def run_module():
             cml.fail_json("Link between nodes does not exist")      
     elif cml.params['action'] == 'delete':
         if link is not None:
+            if module.check_mode:
+                module.exit_json(changed=True)
             lab.remove_link(link) # remove current link
             cml.result['changed'] = True
         else:
