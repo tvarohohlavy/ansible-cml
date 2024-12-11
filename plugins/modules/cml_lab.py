@@ -135,8 +135,11 @@ def run_module():
     else:
         lab = None
 
-    if cml.params['state'] == 'present':
+    if cml.params['state'] in ['present', 'started']:
         if lab is None:
+            if module.check_mode:
+                module.exit_json(changed=True)
+            # create the lab
             if cml.params['topology']:
                 lab = cml.client.import_lab(cml.params['topology'], title=cml.params['lab'])
             elif cml.params['file']:
@@ -147,26 +150,22 @@ def run_module():
                 lab = cml.client.import_lab_from_path(topology_file, title=cml.params['lab'])
             else:
                 lab = cml.client.create_lab(title=cml.params['lab'])
-            lab.title = cml.params['lab']
-            cml.result['changed'] = True
-    elif cml.params['state'] == 'started':
-        if lab is None:
-            if cml.params['topology']:
-                lab = cml.client.import_lab(cml.params['topology'], title=cml.params['lab'])
-                lab.start(wait=cml.params['wait'])
-            elif cml.params['file']:
-                lab = cml.client.import_lab_from_path(cml.params['file'], title=cml.params['lab'])
-                lab.start(wait=cml.params['wait'])
-            else:
-                lab = cml.client.create_lab(title=cml.params['lab'])
+            # start the new lab
+            if cml.params['state'] == 'started':
                 lab.start(wait=cml.params['wait'])
             lab.title = cml.params['lab']
             cml.result['changed'] = True
-        elif lab.state() == "STOPPED":
+        elif lab.state() == "STOPPED" and cml.params['state'] == 'started':
+            if module.check_mode:
+                module.exit_json(changed=True)
+            # start existing stopped lab
             lab.start(wait=cml.params['wait'])
             cml.result['changed'] = True
     elif cml.params['state'] == 'absent':
         if lab:
+            if module.check_mode:
+                module.exit_json(changed=True)
+            # remove existing lab
             cml.result['changed'] = True
             if lab.state() == "STARTED":
                 lab.stop(wait=True)
@@ -177,11 +176,17 @@ def run_module():
     elif cml.params['state'] == 'stopped':
         if lab:
             if lab.state() == "STARTED":
+                if module.check_mode:
+                    module.exit_json(changed=True)
+                # stop existing running lab
                 cml.result['changed'] = True
                 lab.stop(wait=True)
     elif cml.params['state'] == 'wiped':
         if lab:
             if lab.state() == "STOPPED":
+                if module.check_mode:
+                    module.exit_json(changed=True)
+                # wipe existing stopped lab
                 cml.result['changed'] = True
                 lab.wipe(wait=True)
 
