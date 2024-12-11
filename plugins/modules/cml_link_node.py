@@ -174,9 +174,9 @@ def run_module():
     link = source_node.get_link_to(destination_node)
 
     if cml.params['state'] == 'present':
-        if link == None: # if the link does not exist
+        if link is None: # if the link does not exist
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json(changed=True)
             link = lab.connect_two_nodes(source_node, destination_node) 
             cml.result['changed'] = True
         else:
@@ -196,7 +196,7 @@ def run_module():
     elif cml.params['state'] == 'absent':
         if link is not None:
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json(changed=True)
             lab.remove_link(link) # remove current link
             cml.result['changed'] = True
         else:
