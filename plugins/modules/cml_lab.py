@@ -138,7 +138,7 @@ def run_module():
     if cml.params['state'] in ['present', 'started']:
         if lab is None:
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json(changed=True)
             # create the lab
             if cml.params['topology']:
                 lab = cml.client.import_lab(cml.params['topology'], title=cml.params['lab'])
@@ -157,14 +157,14 @@ def run_module():
             cml.result['changed'] = True
         elif lab.state() == "STOPPED" and cml.params['state'] == 'started':
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json(changed=True)
             # start existing stopped lab
             lab.start(wait=cml.params['wait'])
             cml.result['changed'] = True
     elif cml.params['state'] == 'absent':
         if lab:
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json(changed=True)
             # remove existing lab
             cml.result['changed'] = True
             if lab.state() == "STARTED":
@@ -177,7 +177,7 @@ def run_module():
         if lab:
             if lab.state() == "STARTED":
                 if module.check_mode:
-                    module.exit_json(changed=True)
+                    cml.exit_json(changed=True)
                 # stop existing running lab
                 cml.result['changed'] = True
                 lab.stop(wait=True)
@@ -185,7 +185,7 @@ def run_module():
         if lab:
             if lab.state() == "STOPPED":
                 if module.check_mode:
-                    module.exit_json(changed=True)
+                    cml.exit_json(changed=True)
                 # wipe existing stopped lab
                 cml.result['changed'] = True
                 lab.wipe(wait=True)

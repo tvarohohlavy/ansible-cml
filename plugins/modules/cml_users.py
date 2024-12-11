@@ -159,7 +159,7 @@ def run_module():
     if cml.params['state'] == 'present':
         if userid is None:
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json(changed=True)
             module.debug('Create user %s' % cml.params['name'])
             try:
                 cml.client.user_management.create_user(
@@ -176,7 +176,7 @@ def run_module():
     elif cml.params['state'] == 'absent':
         if userid is not None:
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json(changed=True)
             try:
                 cml.client.user_management.delete_user(userid)
                 cml.result['changed'] = True
