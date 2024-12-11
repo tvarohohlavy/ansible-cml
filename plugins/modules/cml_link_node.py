@@ -132,7 +132,9 @@ def run_module():
         source_node=dict(type='str', required=True),
         destination_node=dict(type='str', required=True),
         update_node=dict(type='str', required=False),
-    )
+    required_if = [
+        ['state', 'updated', ['update_node']],
+    ]
 
     # the AnsibleModule object will be our abstraction working with Ansible
     # this includes instantiation, a couple of common attr would be the
@@ -141,6 +143,7 @@ def run_module():
     module = AnsibleModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
+        required_if=required_if,
     )
     cml = cmlModule(module)
 
