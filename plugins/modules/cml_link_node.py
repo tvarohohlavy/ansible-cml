@@ -35,7 +35,7 @@ description:
   - Node names need to be specified to create the link
   - Node links can be updated to point to different nodes: node1->node2 is changed to node1->node3
   - Node links can be deleted
-  - Note: when updating, all three nodes must be specified 
+  - Note: when updating, all three nodes must be specified
 author:
   - Paul Pajerski (@ppajersk)
 requirements:
@@ -59,10 +59,30 @@ options:
         required: true
         type: str
 
+    source_interface:
+        description: The name/label of the first node's interface. Mutually exclusive with source_interface_slot
+        required: false
+        type: str
+
+    source_interface_slot:
+        description: The slot number of the first node's interface. Mutually exclusive with source_interface
+        required: false
+        type: int
+
     destination_node:
         description: The name of the second node
         required: true
         type: str
+
+    destination_interface:
+        description: The name/label of the second node's interface. Mutually exclusive with destination_interface_slot
+        required: false
+        type: str
+
+    destination_interface_slot:
+        description: The slot number of the second node's interface. Mutually exclusive with destination_interface
+        required: false
+        type: int
 
     update_node:
         description: The name of the third node, this node is only used in update commands
@@ -70,6 +90,16 @@ options:
         to link between source_node and update_node
         required: false
         type: str
+
+    update_interface:
+        description: The name/label of the third node's interface. Mutually exclusive with update_interface_slot
+        required: false
+        type: str
+
+    update_interface_slot:
+        description: The slot number of the third node's interface. Mutually exclusive with update_interface
+        required: false
+        type: int
 """
 
 EXAMPLES = r"""
@@ -130,10 +160,28 @@ def run_module():
         lab=dict(type='str', required=True, fallback=(env_fallback, ['CML_LAB'])),
         state=dict(type='str', required=True, choices=['present', 'updated', 'absent'], default='present'),
         source_node=dict(type='str', required=True),
+        source_interface=dict(type='str', required=False),
+        source_interface_slot=dict(type='int', required=False),
         destination_node=dict(type='str', required=True),
+        destination_interface=dict(type='str', required=False),
+        destination_interface_slot=dict(type='int', required=False),
         update_node=dict(type='str', required=False),
+        update_interface=dict(type='str', required=False),
+        update_interface_slot=dict(type='int', required=False),
+    )
+
     required_if = [
         ['state', 'updated', ['update_node']],
+    ]
+
+    required_by = {
+        'update_interface': ('update_node', ),
+    }
+
+    mutually_exclusive = [
+        ['source_interface', 'source_interface_slot'],
+        ['destination_interface', 'destination_interface_slot'],
+        ['update_interface', 'update_interface_slot'],
     ]
 
     # the AnsibleModule object will be our abstraction working with Ansible
@@ -144,6 +192,8 @@ def run_module():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=required_if,
+        required_by=required_by,
+        mutually_exclusive=mutually_exclusive,
     )
     cml = cmlModule(module)
     cml.result['changed'] = False
@@ -165,7 +215,7 @@ def run_module():
 
     if source_node == destination_node:
         cml.fail_json("Source and destination nodes cannot be the same")
-    
+
     if cml.params['state'] == 'updated' and update_node is None:
         cml.fail_json("State set to updated, but source_node was not found")
     if cml.params['update_node'] and update_node is None:
@@ -173,26 +223,103 @@ def run_module():
 
     link = source_node.get_link_to(destination_node)
 
+    # get specified interfaces by label or slot
+    source_interface, destination_interface, update_interface = None, None, None
+    if cml.params['source_interface'] is not None or cml.params['source_interface_slot'] is not None:
+        if cml.params['source_interface'] is not None:
+            source_interface = source_node.get_interface_by_label(cml.params['source_interface'])
+        elif cml.params['source_interface_slot'] is not None:
+            source_interface = source_node.get_interface_by_slot(cml.params['source_interface_slot'])
+        if source_interface is None:
+            cml.fail_json("Source interface specified, but not found")
+
+    if cml.params['destination_interface'] is not None or cml.params['destination_interface_slot'] is not None:
+        if cml.params['destination_interface'] is not None:
+            destination_interface = destination_node.get_interface_by_label(cml.params['destination_interface'])
+        elif cml.params['destination_interface_slot'] is not None:
+            destination_interface = destination_node.get_interface_by_slot(cml.params['destination_interface_slot'])
+        if destination_interface is None:
+            cml.fail_json("Destination interface specified, but not found")
+
+    if cml.params['update_interface'] is not None or cml.params['update_interface_slot'] is not None:
+        if cml.params['update_interface'] is not None:
+            update_interface = update_node.get_interface_by_label(cml.params['update_interface'])
+        elif cml.params['update_interface_slot'] is not None:
+            update_interface = update_node.get_interface_by_slot(cml.params['update_interface_slot'])
+        if update_interface is None:
+            cml.fail_json("Update interface specified, but not found")
+
+    # Get all links between nodes
+    link = None
+    links = source_node.get_links_to(destination_node)
+    if links:
+        if source_interface is None and destination_interface is None:
+            # no specific interface specified, just get the first existing link
+            link = links[0]
+        else:
+            # specific interface is specified so need to find the link with matching interfaces
+            for ln in links:
+                if source_interface is not None and source_interface in ln.interfaces:
+                    # source interface is specified and found in link
+                    # link between two nodes found with matching source interface
+                    # verify destination interface if specified
+                    if destination_interface is not None and destination_interface not in ln.interfaces:
+                        # destination interface is not found in link
+                        cml.fail_json("Link found between nodes but destination interface does not match")
+                    link = ln
+                    break
+                if destination_interface is not None and destination_interface in ln.interfaces:
+                    # destination interface is specified and found in link
+                    # link between two nodes found with matching destination interface
+                    # verify source interface if specified
+                    if source_interface is not None and source_interface not in ln.interfaces:
+                        # source interface is not found in link
+                        cml.fail_json("Link found between nodes but source interface does not match")
+                    link = ln
+                    break
+            else:
+                # no existing link found with matching interfaces
+                # check if specified interfaces are not used in other links
+                if source_interface is not None and source_interface.link is not None:
+                    cml.fail_json("Source interface is already used in another link")
+                if destination_interface is not None and destination_interface.link is not None:
+                    cml.fail_json("Destination interface is already used in another link")
+
     if cml.params['state'] == 'present':
         if link is None: # if the link does not exist
             if module.check_mode:
                 cml.exit_json(changed=True)
-            link = lab.connect_two_nodes(source_node, destination_node) 
+            # find source_interface if not specified
+            if source_interface is None:
+                source_interface = source_node.next_available_interface() or source_node.create_interface()
+            # find destination_interface if not specified
+            if destination_interface is None:
+                destination_interface = destination_node.next_available_interface() or destination_node.create_interface()
+            # create link
+            link = lab.create_link(source_interface, destination_interface)
             cml.result['changed'] = True
     elif cml.params['state'] == 'updated':
         if link is not None:
+            if update_interface is not None and update_interface.link is not None:
+                cml.fail_json("Update interface is already used in another link")
             if module.check_mode:
                 cml.exit_json(changed=True)
-            lab.remove_link(link) # remove current link
-            link = lab.connect_two_nodes(source_node, update_node) # create new link
+            # remove current link
+            lab.remove_link(link)
+            # find update_interface if not specified
+            if update_interface is None:
+                update_interface = update_node.next_available_interface() or update_node.create_interface()
+            # create new link
+            link = lab.create_link(source_interface, update_interface)
             cml.result['changed'] = True
         else:
-            cml.fail_json("Link between nodes does not exist so cannot be updated")      
+            cml.fail_json("Link between nodes does not exist so cannot be updated")
     elif cml.params['state'] == 'absent':
         if link is not None:
             if module.check_mode:
                 cml.exit_json(changed=True)
-            lab.remove_link(link) # remove current link
+            # remove current link
+            lab.remove_link(link)
             cml.result['changed'] = True
     cml.exit_json(**cml.result)
 
@@ -200,4 +327,4 @@ def main():
     run_module()
 
 if __name__ == '__main__':
-    main()    
+    main()
