@@ -170,7 +170,7 @@ def run_module():
             if lab.state() == "STARTED":
                 lab.stop(wait=True)
                 lab.wipe(wait=True)
-            elif lab.state() == "STOPPED":
+            elif lab.state() in ("DEFINED_ON_CORE", "STOPPED"):
                 lab.wipe(wait=True)
             lab.remove()
     elif cml.params['state'] == 'stopped':
