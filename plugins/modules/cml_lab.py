@@ -130,7 +130,7 @@ def run_module():
     cml = cmlModule(module)
     cml.result['changed'] = False
     labs = cml.client.find_labs_by_title(cml.params['lab'])
-    print(labs)
+    module.log(msg=str(labs))
     if len(labs) > 0:
         lab = labs[0]
     else:
