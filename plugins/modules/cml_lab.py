@@ -130,10 +130,12 @@ def run_module():
     cml = cmlModule(module)
     cml.result['changed'] = False
     labs = cml.client.find_labs_by_title(cml.params['lab'])
+    module.warn(labs)
     if len(labs):
         lab = labs[0]
     else:
         lab = None
+    module.warn(lab)
 
     module.warn("CHECK_A")
     if cml.params['state'] in ['present', 'started']:
