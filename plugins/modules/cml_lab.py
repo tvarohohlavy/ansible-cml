@@ -135,7 +135,7 @@ def run_module():
     else:
         lab = None
 
-    module.warn(msg="CHECK_A")
+    module.warn("CHECK_A")
     if cml.params['state'] in ['present', 'started']:
         if lab is None:
             if module.check_mode:
@@ -163,23 +163,23 @@ def run_module():
             lab.start(wait=cml.params['wait'])
             cml.result['changed'] = True
     elif cml.params['state'] == 'absent':
-        module.warn(msg="CHECK_1")
+        module.warn("CHECK_1")
         if lab:
-            module.warn(msg="CHECK_2")
+            module.warn("CHECK_2")
             if module.check_mode:
                 module.exit_json(changed=True)
             # remove existing lab
             cml.result['changed'] = True
-            module.warn(msg="CHECK_3")
+            module.warn("CHECK_3")
             if lab.state() == "STARTED":
-                module.warn(msg="CHECK_4")
+                module.warn("CHECK_4")
                 lab.stop(wait=True)
                 lab.wipe(wait=True)
             elif lab.state() in ("DEFINED_ON_CORE", "STOPPED"):
-                module.warn(msg="CHECK_5")
+                module.warn("CHECK_5")
                 lab.wipe(wait=True)
             lab.remove()
-            module.warn(msg="CHECK_6")
+            module.warn("CHECK_6")
     elif cml.params['state'] == 'stopped':
         if lab:
             if lab.state() == "STARTED":
