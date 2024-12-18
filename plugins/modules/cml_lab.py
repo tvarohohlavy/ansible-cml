@@ -167,7 +167,7 @@ def run_module():
     elif cml.params['state'] == 'absent':
         module.warn("CHECK_1")
         module.warn(str(lab))
-        if lab:
+        if lab is not None:
             module.warn("CHECK_2")
             if module.check_mode:
                 module.exit_json(changed=True)
