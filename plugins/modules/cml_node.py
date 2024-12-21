@@ -67,6 +67,12 @@ options:
         required: false
         type: str
 
+    populate_interfaces:
+        description: Automatically create a pre-defined number of interfaces on node creation.
+        required: false
+        type: bool
+        default: False
+
     x:
         description: X coordinate on topology canvas
         required: false
@@ -128,6 +134,7 @@ def run_module():
         node_definition=dict(type='str'),
         image_definition=dict(type='str'),
         config=dict(type='str'),
+        populate_interfaces=dict(type='bool', default=False),
         tags=dict(type='list', elements='str'),
         x=dict(type='int'),
         y=dict(type='int'),
@@ -153,7 +160,11 @@ def run_module():
     node = cml.get_node_by_name(lab, cml.params['name'])
     if cml.params['state'] == 'present':
         if node is None:
-            node = lab.create_node(label=cml.params['name'], node_definition=cml.params['node_definition'])
+            node = lab.create_node(
+                label=cml.params['name'],
+                node_definition=cml.params['node_definition'],
+                populate_interfaces=cml.params['populate_interfaces']
+            )
             cml.result['changed'] = True
     elif cml.params['state'] == 'started':
         if node is None:
