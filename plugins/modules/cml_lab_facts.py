@@ -52,7 +52,7 @@ EXAMPLES = r"""
     - name: Get facts about a lab in CML
       cisco.cml.cml_lab_facts:
         host: "{{ cml_host }}"
-        user: "{{ cml_username }}"
+        username: "{{ cml_username }}"
         password: "{{ cml_password }}"
         lab: "{{ cml_lab }}"
       register: results
@@ -61,14 +61,15 @@ EXAMPLES = r"""
         var: results
 """
 
-from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible_collections.cisco.cml.plugins.module_utils.cml_utils import cmlModule, cml_argument_spec
+import yaml
 
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
     argument_spec = cml_argument_spec()
-    argument_spec.update(lab=dict(type='str', required=True), )
+    argument_spec.update(lab=dict(type='str', required=True, fallback=(env_fallback, ['CML_LAB'])), )
 
     # the AnsibleModule object will be our abstraction working with Ansible
     # this includes instantiation, a couple of common attr would be the
@@ -86,6 +87,8 @@ def run_module():
         # to handle duplicates
         lab = labs[0]
         lab.sync()
+        topology = lab.download()
+        cml_facts['topology'] = yaml.safe_load(topology)
         cml_facts['details'] = lab.details()
         cml_facts['nodes'] = {}
         for node in lab.nodes():

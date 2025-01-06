@@ -84,7 +84,7 @@ EXAMPLES = r"""
     - name: Add users to the CML instance
       cisco.cml.cml_users:
         host: "{{ cml_host }}"
-        user: "{{ cml_username }}"
+        username: "{{ cml_username }}"
         password: "{{ cml_password }}"
         name: "first_user"
         user_pass: "password"
@@ -94,7 +94,7 @@ EXAMPLES = r"""
     - name: Remove users from the CML instance
       cisco.cml.cml_users:
         host: "{{ cml_host }}"
-        user: "{{ cml_username }}"
+        username: "{{ cml_username }}"
         password: "{{ cml_password }}"
         name: "old_user"
         state: "absent"
