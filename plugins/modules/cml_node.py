@@ -163,17 +163,13 @@ def run_module():
                 node.config = cml.params['config']
             if cml.params['image_definition']:
                 node.image_definition = cml.params['image_definition']
-            if cml.params['wait'] is False:
-                lab.wait_for_covergence = False
-            node.start()
+            node.start(wait=cml.params['wait'])
             cml.result['changed'] = True
     elif cml.params['state'] == 'stopped':
         if node is None:
             cml.fail_json("Node must be created before it is stopped")
         if node.state not in ['STOPPED', 'DEFINED_ON_CORE']:
-            if cml.params['wait'] is False:
-                lab.wait_for_covergence = False
-            node.stop()
+            node.stop(wait=cml.params['wait'])
             cml.result['changed'] = True
     elif cml.params['state'] == 'wiped':
         if node is None:
