@@ -170,7 +170,8 @@ def run_module():
     elif cml.params['state'] == 'wiped':
         if node is None:
             cml.fail_json("Node must be created before it is wiped")
-        if node.state not in ['DEFINED_ON_CORE']:
+            if node.state in ['STARTED', 'BOOTED']:
+                node.stop(wait=cml.params['wait'])
             node.wipe(wait=cml.params['wait'])
             cml.result['changed'] = True
     cml.exit_json(**cml.result)
