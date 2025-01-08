@@ -153,16 +153,17 @@ def run_module():
     node = cml.get_node_by_name(lab, cml.params['name'])
     if cml.params['state'] == 'present':
         if node is None:
-            if module.check_mode:
-                cml.exit_json(changed=True)
-            node = lab.create_node(label=cml.params['name'], node_definition=cml.params['node_definition'])
             cml.result['changed'] = True
+            if module.check_mode:
+                cml.exit_json()
+            node = lab.create_node(label=cml.params['name'], node_definition=cml.params['node_definition'])
     elif cml.params['state'] == 'started':
         if node is None:
             cml.fail_json("Node must be created before it is started")
         if node.state not in ['STARTED', 'BOOTED']:
+            cml.result['changed'] = True
             if module.check_mode:
-                cml.exit_json(changed=True)
+                cml.exit_json()
             if node.state == 'DEFINED_ON_CORE' and cml.params['config']:
                 node.config = cml.params['config']
             if cml.params['image_definition']:
@@ -170,25 +171,24 @@ def run_module():
             if cml.params['wait'] is False:
                 lab.wait_for_covergence = False
             node.start()
-            cml.result['changed'] = True
     elif cml.params['state'] == 'stopped':
         if node is None:
             cml.fail_json("Node must be created before it is stopped")
         if node.state not in ['STOPPED', 'DEFINED_ON_CORE']:
+            cml.result['changed'] = True
             if module.check_mode:
-                cml.exit_json(changed=True)
+                cml.exit_json()
             if cml.params['wait'] is False:
                 lab.wait_for_covergence = False
             node.stop()
-            cml.result['changed'] = True
     elif cml.params['state'] == 'wiped':
         if node is None:
             cml.fail_json("Node must be created before it is wiped")
         if node.state not in ['DEFINED_ON_CORE']:
-            if module.check_mode:
-                cml.exit_json(changed=True)
-            node.wipe(wait=cml.params['wait'])
             cml.result['changed'] = True
+            if module.check_mode:
+                cml.exit_json()
+            node.wipe(wait=cml.params['wait'])
     cml.exit_json(**cml.result)
 
 
