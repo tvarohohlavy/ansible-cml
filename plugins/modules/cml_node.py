@@ -38,7 +38,7 @@ requirements:
 version_added: '0.1.0'
 options:
     state:
-        description: The desired state of the node
+        description: The desired state of the node. Started, stopped and wiped are only state changes and require existing node.
         required: false
         type: str
         choices: ['absent', 'present', 'started', 'stopped', 'wiped']
@@ -170,6 +170,7 @@ def run_module():
     elif cml.params['state'] == 'wiped':
         if node is None:
             cml.fail_json("Node must be created before it is wiped")
+        if node.state != 'DEFINED_ON_CORE':
             if node.state in ['STARTED', 'BOOTED']:
                 node.stop(wait=cml.params['wait'])
             node.wipe(wait=cml.params['wait'])
