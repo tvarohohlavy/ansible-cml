@@ -167,7 +167,24 @@ def run_module():
                 node_definition=cml.params['node_definition'],
                 populate_interfaces=cml.params['populate_interfaces']
             )
+            # set optional parameters when defined
+            if cml.params['x'] is not None:
+                node.x = cml.params['x']
+            if cml.params['y'] is not None:
+                node.y = cml.params['y']
             cml.result['changed'] = True
+        else:
+            # check coordinates of existing node when defined
+            if cml.params['x'] is not None and cml.params['x'] != node.x:
+                cml.result['changed'] = True
+                if module.check_mode:
+                    cml.exit_json()
+                node.x = cml.params['x']
+            if cml.params['y'] is not None and cml.params['y'] != node.y:
+                cml.result['changed'] = True
+                if module.check_mode:
+                    cml.exit_json()
+                node.y = cml.params['y']           
     elif cml.params['state'] == 'started':
         if node is None:
             cml.fail_json("Node must be created before it is started")
