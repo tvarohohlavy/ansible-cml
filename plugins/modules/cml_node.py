@@ -166,7 +166,7 @@ def run_module():
             node = lab.create_node(
                 label=cml.params['name'],
                 node_definition=cml.params['node_definition'],
-                populate_interfaces=cml.params['populate_interfaces']
+                populate_interfaces=cml.params['populate_interfaces'],
             )
             # set optional parameters when defined
             if cml.params['x'] is not None:
