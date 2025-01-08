@@ -181,6 +181,16 @@ def run_module():
         if node.state not in ['DEFINED_ON_CORE']:
             node.wipe(wait=cml.params['wait'])
             cml.result['changed'] = True
+    elif cml.params['state'] == 'absent':
+        if node is not None:
+            cml.result['changed'] = True
+            if module.check_mode:
+                cml.exit_json()
+            if node.state in ['STARTED', 'BOOTED']:
+                node.stop(wait=cml.params['wait'])
+            if node.state != 'DEFINED_ON_CORE':
+                node.wipe(wait=cml.params['wait'])
+            node.remove()
     cml.exit_json(**cml.result)
 
 
