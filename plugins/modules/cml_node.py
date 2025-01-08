@@ -159,10 +159,6 @@ def run_module():
         if node is None:
             cml.fail_json("Node must be created before it is started")
         if node.state not in ['STARTED', 'BOOTED']:
-            if node.state == 'DEFINED_ON_CORE' and cml.params['config']:
-                node.config = cml.params['config']
-            if cml.params['image_definition']:
-                node.image_definition = cml.params['image_definition']
             node.start(wait=cml.params['wait'])
             cml.result['changed'] = True
     elif cml.params['state'] == 'stopped':
