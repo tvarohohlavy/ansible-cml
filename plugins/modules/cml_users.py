@@ -154,7 +154,7 @@ def run_module():
 
     if not HAS_REQUESTS:
         # Needs: from ansible.module_utils.basic import missing_required_lib
-        module.fail_json(msg=missing_required_lib('requests'), exception=REQUESTS_IMPORT_ERROR)
+        cml.fail_json(msg=missing_required_lib('requests'), exception=REQUESTS_IMPORT_ERROR)
 
     if cml.params['state'] == 'present':
         if userid is None:
