@@ -288,8 +288,9 @@ def run_module():
 
     if cml.params['state'] == 'present':
         if link is None: # if the link does not exist
+            cml.result['changed'] = True
             if module.check_mode:
-                cml.exit_json(changed=True)
+                cml.exit_json()
             # find source_interface if not specified
             if source_interface is None:
                 source_interface = source_node.next_available_interface() or source_node.create_interface()
@@ -298,13 +299,13 @@ def run_module():
                 destination_interface = destination_node.next_available_interface() or destination_node.create_interface()
             # create link
             link = lab.create_link(source_interface, destination_interface)
-            cml.result['changed'] = True
     elif cml.params['state'] == 'updated':
         if link is not None:
             if update_interface is not None and update_interface.link is not None:
                 cml.fail_json("Update interface is already used in another link")
+            cml.result['changed'] = True
             if module.check_mode:
-                cml.exit_json(changed=True)
+                cml.exit_json()
             # remove current link
             lab.remove_link(link)
             # find update_interface if not specified
@@ -312,16 +313,15 @@ def run_module():
                 update_interface = update_node.next_available_interface() or update_node.create_interface()
             # create new link
             link = lab.create_link(source_interface, update_interface)
-            cml.result['changed'] = True
         else:
             cml.fail_json("Link between nodes does not exist so cannot be updated")
     elif cml.params['state'] == 'absent':
         if link is not None:
+            cml.result['changed'] = True
             if module.check_mode:
-                cml.exit_json(changed=True)
+                cml.exit_json()
             # remove current link
             lab.remove_link(link)
-            cml.result['changed'] = True
     cml.exit_json(**cml.result)
 
 def main():

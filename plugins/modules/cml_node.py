@@ -160,8 +160,9 @@ def run_module():
     node = cml.get_node_by_name(lab, cml.params['name'])
     if cml.params['state'] == 'present':
         if node is None:
+            cml.result['changed'] = True
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json()
             node = lab.create_node(
                 label=cml.params['name'],
                 node_definition=cml.params['node_definition'],
@@ -172,7 +173,6 @@ def run_module():
                 node.x = cml.params['x']
             if cml.params['y'] is not None:
                 node.y = cml.params['y']
-            cml.result['changed'] = True
         else:
             # check coordinates of existing node when defined
             if cml.params['x'] is not None and cml.params['x'] != node.x:
@@ -189,8 +189,9 @@ def run_module():
         if node is None:
             cml.fail_json("Node must be created before it is started")
         if node.state not in ['STARTED', 'BOOTED']:
+            cml.result['changed'] = True
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json()
             if node.state == 'DEFINED_ON_CORE' and cml.params['config']:
                 node.config = cml.params['config']
             if cml.params['image_definition']:
@@ -209,6 +210,8 @@ def run_module():
                 lab.wait_for_covergence = False
             node.stop()
             cml.result['changed'] = True
+            if module.check_mode:
+                cml.exit_json()
     elif cml.params['state'] == 'wiped':
         if node is None:
             cml.fail_json("Node must be created before it is wiped")

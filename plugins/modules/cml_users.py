@@ -154,12 +154,13 @@ def run_module():
 
     if not HAS_REQUESTS:
         # Needs: from ansible.module_utils.basic import missing_required_lib
-        module.fail_json(msg=missing_required_lib('requests'), exception=REQUESTS_IMPORT_ERROR)
+        cml.fail_json(msg=missing_required_lib('requests'), exception=REQUESTS_IMPORT_ERROR)
 
     if cml.params['state'] == 'present':
         if userid is None:
+            cml.result['changed'] = True
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json()
             module.debug('Create user %s' % cml.params['name'])
             try:
                 cml.client.user_management.create_user(
@@ -170,16 +171,15 @@ def run_module():
                     admin=cml.params['admin'],
                     groups=cml.params['groups'],
                 )
-                cml.result['changed'] = True
             except requests.exceptions.RequestException as e:
                 cml.fail_json(name=cml.params['name'], msg=e, rc=-1)
     elif cml.params['state'] == 'absent':
         if userid is not None:
+            cml.result['changed'] = True
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json()
             try:
                 cml.client.user_management.delete_user(userid)
-                cml.result['changed'] = True
             except requests.exceptions.RequestException as e:
                 cml.fail_json(name=cml.params['name'], msg=e, rc=-1)
 
