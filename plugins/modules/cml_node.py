@@ -63,9 +63,9 @@ options:
         type: str
 
     config:
-        description: The day0 configuration of this node
+        description: The day0 configuration of this node. Can be of type string, list or dictionary.
         required: false
-        type: str
+        type: raw
 
     x:
         description: X coordinate on topology canvas
@@ -102,6 +102,17 @@ EXAMPLES = r"""
         day0_config: "{{ lookup('template', cml_config_template) }}"
       when: cml_config_template is defined
 
+    - name: Create Node
+      cisco.cml.cml_node:
+        name: "{{ inventory_hostname }}"
+        host: "{{ cml_host }}"
+        user: "{{ cml_username }}"
+        password: "{{ cml_password }}"
+        lab: "{{ cml_lab }}"
+        state: present
+        image_definition: "{{ cml_image_definition | default(omit) }}"
+        config: "{{ day0_config | default(omit) }}"
+
     - name: Start Node
       cisco.cml.cml_node:
         name: "{{ inventory_hostname }}"
@@ -110,8 +121,6 @@ EXAMPLES = r"""
         password: "{{ cml_password }}"
         lab: "{{ cml_lab }}"
         state: started
-        image_definition: "{{ cml_image_definition | default(omit) }}"
-        config: "{{ day0_config | default(omit) }}"
 """
 
 from ansible.module_utils.basic import AnsibleModule, env_fallback
@@ -127,7 +136,7 @@ def run_module():
         lab=dict(type='str', required=True, fallback=(env_fallback, ['CML_LAB'])),
         node_definition=dict(type='str'),
         image_definition=dict(type='str'),
-        config=dict(type='str'),
+        config=dict(type='raw'),
         tags=dict(type='list', elements='str'),
         x=dict(type='int'),
         y=dict(type='int'),
@@ -144,6 +153,29 @@ def run_module():
     )
     cml = cmlModule(module)
 
+    # Validate provided configuration format
+    if "config" in cml.params and cml.params["config"] is not None:
+        if (
+            not isinstance(cml.params["config"], (str, list, dict))
+            or (
+                isinstance(cml.params["config"], list)
+                and not all(
+                    isinstance(cf, dict) and "name" in cf and "content" in cf
+                    for cf in cml.params["config"]
+                )
+            )
+            or (
+                isinstance(cml.params["config"], dict)
+                and (
+                    "name" not in cml.params["config"]
+                    or "content" not in cml.params["config"]
+                )
+            )
+        ):
+            cml.fail_json(
+                "Configuration must be a string, dictionary with 'name' and 'content' keys or list of such dictionaries"
+            )
+
     labs = cml.client.find_labs_by_title(cml.params['lab'])
     if len(labs) > 0:
         lab = labs[0]
@@ -155,6 +187,58 @@ def run_module():
         if node is None:
             node = lab.create_node(label=cml.params['name'], node_definition=cml.params['node_definition'])
             cml.result['changed'] = True
+            # set optional parameters when defined
+            if cml.params['config'] is not None:
+                node.configuration = cml.params['config']
+        else:
+            # check configuration of existing node when defined
+            if cml.params["config"] is not None:
+                config_change_needed = False
+                # Compare provided string with single config
+                # We are checking only content of main configuration
+                if isinstance(cml.params["config"], str):
+                    if cml.params["config"] != node.configuration:
+                        config_change_needed = True
+                else:
+                    # Transform configuration files to dictionary
+                    # From: [{'name': 'name1', 'content': 'content1...'}, ...]
+                    # To: {'name1': 'content1...', ...}
+                    cf_dict = {
+                        cf["name"]: cf["content"] for cf in node.configuration_files
+                    }
+                    # Remove existing 'Main' config from comparison if it is duplicate of another file
+                    if "Main" in cf_dict:
+                        for k, v in cf_dict.items():
+                            if k != "Main" and v == cf_dict["Main"]:
+                                del cf_dict["Main"]
+                                break
+                    # Compare provided list of configs - [{'name': '...', 'content': '...'}, ...]
+                    # We are checking existence and content of all provided config files
+                    if isinstance(cml.params["config"], list):
+                        if not all(
+                            cf["name"] in cf_dict
+                            and cf["content"] == cf_dict[cf["name"]]
+                            for cf in cml.params["config"]
+                        ):
+                            config_change_needed = True
+                    # Compare provided dictionary with single config - {'name': '...', 'content': '...'}
+                    # We are checking only existence and content of the provided config file
+                    elif isinstance(cml.params["config"], dict):
+                        if (
+                            cml.params["config"]["name"] not in cf_dict
+                            or cml.params["config"]["content"]
+                            != cf_dict[cml.params["config"]["name"]]
+                        ):
+                            config_change_needed = True
+                if config_change_needed:
+                    if node.state != "DEFINED_ON_CORE":
+                        cml.fail_json(
+                            "Configuration change detected, but node must be wiped and stopped before it can be updated"
+                        )
+                    cml.result["changed"] = True
+                    if module.check_mode:
+                        cml.exit_json()
+                    node.configuration = cml.params["config"]
     elif cml.params['state'] == 'started':
         if node is None:
             cml.fail_json("Node must be created before it is started")
