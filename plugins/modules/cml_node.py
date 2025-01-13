@@ -38,7 +38,7 @@ requirements:
 version_added: '0.1.0'
 options:
     state:
-        description: The desired state of the node
+        description: The desired state of the node. Started, stopped and wiped are only state changes and require existing node.
         required: false
         type: str
         choices: ['absent', 'present', 'started', 'stopped', 'wiped']
@@ -260,32 +260,24 @@ def run_module():
             cml.result['changed'] = True
             if module.check_mode:
                 cml.exit_json()
-            if node.state == 'DEFINED_ON_CORE' and cml.params['config']:
-                node.config = cml.params['config']
-            if cml.params['image_definition']:
-                node.image_definition = cml.params['image_definition']
-            if cml.params['wait'] is False:
-                lab.wait_for_covergence = False
-            node.start()
-            cml.result['changed'] = True
+            node.start(wait=cml.params['wait'])
     elif cml.params['state'] == 'stopped':
         if node is None:
             cml.fail_json("Node must be created before it is stopped")
         if node.state not in ['STOPPED', 'DEFINED_ON_CORE']:
-            if module.check_mode:
-                module.exit_json(changed=True)
-            if cml.params['wait'] is False:
-                lab.wait_for_covergence = False
-            node.stop()
             cml.result['changed'] = True
             if module.check_mode:
                 cml.exit_json()
+            node.stop(wait=cml.params['wait'])
     elif cml.params['state'] == 'wiped':
         if node is None:
-            cml.fail_json("Node must be created before it is wiped")
-        if node.state not in ['DEFINED_ON_CORE']:
+            cml.fail_json("Node must be created before it is wiped")        
+        if node.state != 'DEFINED_ON_CORE':
+            cml.result['changed'] = True
             if module.check_mode:
-                module.exit_json(changed=True)
+                cml.exit_json()
+            if node.state in ['STARTED', 'BOOTED']:
+                node.stop(wait=cml.params['wait'])
             node.wipe(wait=cml.params['wait'])
     elif cml.params['state'] == 'absent':
         if node is not None:
