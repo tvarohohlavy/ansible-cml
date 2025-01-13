@@ -206,12 +206,6 @@ def run_module():
                     cf_dict = {
                         cf["name"]: cf["content"] for cf in node.configuration_files
                     }
-                    # Remove existing 'Main' config from comparison if it is duplicate of another file
-                    if "Main" in cf_dict:
-                        for k, v in cf_dict.items():
-                            if k != "Main" and v == cf_dict["Main"]:
-                                del cf_dict["Main"]
-                                break
                     # Compare provided list of configs - [{'name': '...', 'content': '...'}, ...]
                     # We are checking existence and content of all provided config files
                     if isinstance(cml.params["config"], list):
